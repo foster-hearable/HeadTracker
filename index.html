@@ -26,6 +26,12 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         <button id="startNotifications" class="button">Start Notify</button>
         <button id="stopNotifications" class="button">Stop Notify</button>
         <button id="Reposition" class="button">Reposition</button>
+        <br/>
+        <br/>
+        <div id="message">
+            <label>WebSocket URL : <input type="text" id="ws_url" size="30" value="ws://127.0.0.1:6301"></label>
+            <button id="WebSocket" class="button">Connect</button>    
+        </div>
         <hr>
         <div id="device_name"> </div>
         <div id="uuid_name"> </div>
@@ -37,15 +43,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     </div>
 </div>
 
-<!--
-<script type="importmap">
-{
-    "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js"
-    }
-}
-</script>
--->
 <script type="importmap">
     {
         "imports": {
@@ -53,10 +50,15 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         }
     }
 </script>
-    
 <script type="text/javascript" src="bluejelly.js"></script>
 <script type="text/javascript" src="MadgwickAHRS.js"></script>
+
+
+<!--=======================================================================================-->
 <script>
+    //--------------------------------------------------
+    //Globals
+    //--------------------------------------------------
     gQuat     = [1.0, 0.0, 0.0, 0.0]        //[w, x, y, z]
     gHomeQuat = [1.0, 0.0, 0.0, 0.0]
     gMultQuat = [1.0, 0.0, 0.0, 0.0]
@@ -110,11 +112,14 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     dc_removeZ = new biquad(iir_coef[0], iir_coef[1], iir_coef[2], iir_coef[3], iir_coef[4], iir_coef[5])
 </script>
 
+
+<!--=======================================================================================-->
 <script>
+    //--------------------------------------------------
+    //Web Bluetooth Wrappers
+    //--------------------------------------------------
     const ble = new BlueJelly();
 
-    //--------------------------------------------------
-    //Scan後の処理
     //--------------------------------------------------
     ble.onScan = function (deviceName) {
         console.log('onScan() : ' + deviceName)
@@ -125,8 +130,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     }
 
     //--------------------------------------------------
-    //ConnectGATT後の処理
-    //--------------------------------------------------
     ble.onConnectGATT = function (uuid) {
         console.log('> connected GATT!');
 
@@ -134,8 +137,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         document.getElementById('status').innerHTML = "connected GATT!";
     }
 
-    //--------------------------------------------------
-    //Read後の処理：得られたデータの表示など行う
     //--------------------------------------------------
     ble.onRead = function (data, uuid){
         var length = data.byteLength;
@@ -200,6 +201,7 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         }
     }
 
+    //--------------------------------------------------
     ble.onWrite = function(uuid){
         console.log('> onWrite! ' + uuid);
         if (uuid == 'GYROMODE') {
@@ -211,8 +213,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         }
     }
 
-    //--------------------------------------------------
-    //Start Notify後の処理
     //--------------------------------------------------
     ble.onStartNotify = function(uuid){
         console.log('> Start Notify! ' + uuid);
@@ -226,8 +226,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
 
 
     //--------------------------------------------------
-    //Stop Notify後の処理
-    //--------------------------------------------------
     ble.onStopNotify = function(uuid){
         console.log('> Stop Notify!');
         gStatus = 0
@@ -239,9 +237,8 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         document.getElementById("stopNotifications").setAttribute("disabled","disabled");
     }
 
+    //--------------------------------------------------
     robin_init = function() {
-        //-------------------------------------------------
-        //-------------------------------------------------
         Object.defineProperty(document, 'ROBIN2_GYRO_SERVICE', {value: "41001100-0000-1000-8000-00805f9b0230", writable: false});
         Object.defineProperty(document, 'ROBIN2_GYRO',         {value: "41001101-0000-1000-8000-00805f9b0230", writable: false});
         Object.defineProperty(document, 'ROBIN2_GYROMODE',     {value: "41001103-0000-1000-8000-00805f9b0230", writable: false});
@@ -279,30 +276,99 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     }
 </script>
 
+
+<!--=======================================================================================-->
+<script>
+    //--------------------------------------------------
+    //WebSocket
+    //--------------------------------------------------
+    let wsurl_element = document.getElementById('ws_url');
+    let sock = null
+
+    ws_refresh = function() {
+        if (wsurl_element.disabled) {
+            console.log('WebSocket: Close.');        
+            sock.close()
+        } else {
+            console.log('WebSocket: Reconnect.');        
+            sock = new WebSocket(wsurl_element.value);
+
+            sock.addEventListener('open',function(e){
+                console.log('WebSocket: Connected.');
+                document.getElementById('WebSocket').textContent = "Disconnect"
+                wsurl_element.disabled = true
+
+                window.setInterval(function(){
+                    if ((gStatus & flgStatus.OPENED) && (wsurl_element.disabled)) {
+                        d = [
+                            gStatus,
+                            gMultQuat._w,
+                            gMultQuat._x,
+                            gMultQuat._y,
+                            gMultQuat._z,
+                        ]
+                        sock.send(d);
+                        //console.log(d)
+                    }
+                }, 100);
+            });
+            sock.onclose = () => {
+                console.log('WebSocket: Closed.');        
+                document.getElementById('WebSocket').textContent = "Connect"
+                wsurl_element.disabled = false
+            }
+            sock.onmessage = function(e) {
+                console.log(e.data)
+            }
+        }
+    }
+    ws_refresh()
+
+    //--------------------------------------------------
+    // Onload setups and Buttons
+    //--------------------------------------------------
+    window.onload = function () {
+    robin_init();
+    
+    document.getElementById("startNotifications").removeAttribute("disabled");
+    document.getElementById("stopNotifications").setAttribute("disabled","disabled");
+    }
+
+    document.getElementById('startNotifications').addEventListener('click', function(e) {
+        robin_open();
+    });
+
+    document.getElementById('stopNotifications').addEventListener('click', function() {
+        robin_close();
+    });
+
+    document.getElementById('Reposition').addEventListener('click', function(e) {
+        robin_reposition();
+    });
+</script>
+
+
+<!--=======================================================================================-->
 <script type="module">
+    //--------------------------------------------------
+    //3D Rendering
+    //--------------------------------------------------
     import * as THREE from 'three';
 
-    // サイズを指定
     const width = 960;
     const height = 540;
-
-    // レンダラーを作成
     const renderer = new THREE.WebGLRenderer({
         canvas: document.querySelector("#myCanvas"),
     });
     renderer.setPixelRatio(window.devicePixelRatio);
     //renderer.setSize(width, height);
 
-    // シーンを作成
-    const scene = new THREE.Scene();
-
-    // カメラを作成
+    const scene  = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, width / height);
     camera.position.set(1000, 0, 0);
     camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-    // 箱を作成
-    const geometry = new THREE.BoxGeometry(400, 400, 400);
+    const geometry  = new THREE.BoxGeometry(400, 400, 400);
     const material1 = new THREE.MeshNormalMaterial();
     const material = [
         new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load('smile.png')}),
@@ -318,7 +384,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     scene.add(box);
     tick();
     
-    // 毎フレーム時に実行されるループイベントです
     function tick() {
         var home = new THREE.Quaternion(gHomeQuat[1], gHomeQuat[2], gHomeQuat[3], gHomeQuat[0]).conjugate()
         
@@ -330,7 +395,7 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
             box.rotation.y += 0.02
             box.rotation.z += 0.02
         }
-        renderer.render(scene, camera); // レンダリング
+        renderer.render(scene, camera);
 
         gMultQuat = box.quaternion
         requestAnimationFrame(tick);
@@ -338,64 +403,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
 </script>
 
 
-<script>
 
-//--------------------------------------------------
-//WebSocketのセットアップ
-//--------------------------------------------------
-const sock = new WebSocket('ws://127.0.0.1:6301');
-sock.addEventListener('open',function(e){
-    console.log('Socket successfully opened.');
-    window.setInterval(function(){
-        if (gStatus & flgStatus.OPENED) {
-            d = [
-                gStatus,
-                gMultQuat._w,
-                gMultQuat._x,
-                gMultQuat._y,
-                gMultQuat._z,
-            ]
-            sock.send(d);
-            console.log(d)
-        }
-    }, 100);
-});
-sock.onclose = () => {
-    console.log('Socket Closed.');        
-}
-sock.onmessage = function(e) {
-    console.log(e.data)
-}
-
-
-
-
-//--------------------------------------------------
-//ロード時の処理
-//--------------------------------------------------
-window.onload = function () {
-  robin_init();
-  
-  document.getElementById("startNotifications").removeAttribute("disabled");
-  document.getElementById("stopNotifications").setAttribute("disabled","disabled");
-}
-
-//-------------------------------------------------
-//ボタンが押された時のイベント登録
-//--------------------------------------------------
-document.getElementById('startNotifications').addEventListener('click', function(e) {
-    robin_open();
-});
-
-document.getElementById('stopNotifications').addEventListener('click', function() {
-    robin_close();
-});
-
-document.getElementById('Reposition').addEventListener('click', function(e) {
-    robin_reposition();
-});
-
-
-</script>
 </body>
 </html>
