@@ -1,58 +1,66 @@
 <!doctype html>
 <!--
-Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
+Copyright 2023 Foster Electric Co., Ltd.
+Released under the MIT license
 -->
 <html>
+  <style>
+    .flex {
+        display: -webkit-flex;
+        display: -moz-flex;
+        display: -ms-flex;
+        display: -o-flex;
+        display: flex;
+        gap: 6px 6px;
+    }    
+  </style>
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="description" content="Foster Hearable">
     <meta name="viewport" content="width=640, maximum-scale=1.0, user-scalable=yes">
     <title>Foster Hearable</title>
-    <link href="https://fonts.googleapis.com/css?family=Lato:100,300,400,700,900" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./components/simple.css"> 
   </head>
 <body>
 <div class="container">
-    <div class="title margin">
-        <p id="title">Foster Hearable</p>
-        <p id="subtitle">Head Tracking Frontend</p>
-    </div>
+    <h1>Foster Hearable</h1>
+    <p>Head Tracking Frontend</p>
 
-    <div class="threeD">
+    <div class="flex" >
         <canvas id="myCanvas"></canvas>
     </div>
-    <div class="contents margin">
+    <br/>
+    <div class="flex" >
         <button id="startNotifications" class="button">Start Notify</button>
         <button id="stopNotifications" class="button">Stop Notify</button>
         <button id="Reposition" class="button">Reposition</button>
-        <br/>
-        <br/>
-        <div id="message">
-            <label>WebSocket URL : <input type="text" id="ws_url" size="30" value="ws://127.0.0.1:6301"></label>
-            <button id="WebSocket" class="button">Connect</button>    
-        </div>
-        <hr>
-        <div id="device_name"> </div>
-        <div id="uuid_name"> </div>
-        <div id="data_text"> </div>
-        <div id="status"> </div>
     </div>
-    <div class="footer margin">
-        For more information, see <a href="https://github.com/foster-hearable/PPGFrontend" target="_blank">GitHub</a> !
+    <br/>
+    <div class="flex" >
+        <label>WebSocket URL : <input type="text" id="ws_url" size="40" value="ws://127.0.0.1:6301"></label>
+        <button id="WebSocket" class="button">Connect</button>    
+    </div>
+    <div class="code"><pre>
+    <span id="device_name"> </span>
+    <span id="uuid_name"> </span>
+    <span id="data_text"> </span><span id="status"> </span></pre>
+    </div>
+    <hr>
+    <div class="footer">
+        For more information, see <a href="https://github.com/foster-hearable/HeadTracker" target="_blank">GitHub</a> !
     </div>
 </div>
 
 <script type="importmap">
     {
         "imports": {
-            "three": "./three.module.js"
+            "three": "./components/three.module.js"
         }
     }
 </script>
-<script type="text/javascript" src="bluejelly.js"></script>
-<script type="text/javascript" src="MadgwickAHRS.js"></script>
-
+<script type="text/javascript" src="./components/bluejelly.js"></script>
+<script type="text/javascript" src="./components/MadgwickAHRS.js"></script>
 
 <!--=======================================================================================-->
 <script>
@@ -71,6 +79,8 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
 
     QuatReposition = function (){
         console.log("> Reset Home Position.")
+        document.getElementById('data_text').innerHTML = "";
+        document.getElementById('status').innerHTML = "Reset: Home Position."
         gHomeQuat = [gQuat[0], gQuat[1], gQuat[2], gQuat[3]]
     }
 
@@ -112,8 +122,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     dc_removeZ = new biquad(iir_coef[0], iir_coef[1], iir_coef[2], iir_coef[3], iir_coef[4], iir_coef[5])
 </script>
 
-
-<!--=======================================================================================-->
 <script>
     //--------------------------------------------------
     //Web Bluetooth Wrappers
@@ -144,6 +152,7 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         for (var i=0; i<length; i++){
             d.push(data.getUint8(i))
         }
+        //console.log(d)
 
         document.getElementById('data_text').innerHTML = length;
         document.getElementById('uuid_name').innerHTML = uuid;
@@ -179,9 +188,11 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
 
             if (!(gStatus & flgStatus.WEAR) && (wear==0x01)) {
                 var timer = window.setInterval( function() {
+                    document.getElementById("Reposition").disabled = true;
                     QuatReposition()
                 }, 100);
                 window.setTimeout( function() {
+                    document.getElementById("Reposition").disabled = false;
                     clearInterval(timer)
                     console.log("Home Posiotion Cleared.")
                 }, 3000)
@@ -220,10 +231,9 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         document.getElementById('uuid_name').innerHTML = uuid;
         document.getElementById('status').innerHTML = "started Notify";
 
-        document.getElementById("startNotifications").setAttribute("disabled","disabled");
-        document.getElementById("stopNotifications").removeAttribute("disabled");
+        document.getElementById("startNotifications").disabled = true;
+        document.getElementById("stopNotifications").disabled  = false;
     }
-
 
     //--------------------------------------------------
     ble.onStopNotify = function(uuid){
@@ -233,11 +243,11 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         document.getElementById('uuid_name').innerHTML = uuid;
         document.getElementById('status').innerHTML = "stopped Notify";
 
-        document.getElementById("startNotifications").setAttribute("disabled","disabled");
-        document.getElementById("stopNotifications").setAttribute("disabled","disabled");
+        document.getElementById("startNotifications").disabled = true;
+        document.getElementById("stopNotifications").disabled  = true;
     }
 
-    //--------------------------------------------------
+    //-------------------------------------------------
     robin_init = function() {
         Object.defineProperty(document, 'ROBIN2_GYRO_SERVICE', {value: "41001100-0000-1000-8000-00805f9b0230", writable: false});
         Object.defineProperty(document, 'ROBIN2_GYRO',         {value: "41001101-0000-1000-8000-00805f9b0230", writable: false});
@@ -277,7 +287,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
 </script>
 
 
-<!--=======================================================================================-->
 <script>
     //--------------------------------------------------
     //WebSocket
@@ -328,10 +337,10 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     // Onload setups and Buttons
     //--------------------------------------------------
     window.onload = function () {
-    robin_init();
-    
-    document.getElementById("startNotifications").removeAttribute("disabled");
-    document.getElementById("stopNotifications").setAttribute("disabled","disabled");
+        robin_init();
+        
+        document.getElementById("startNotifications").disabled = false;
+        document.getElementById("stopNotifications").disabled  = true;
     }
 
     document.getElementById('startNotifications').addEventListener('click', function(e) {
@@ -375,7 +384,7 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     const geometry  = new THREE.BoxGeometry(400, 400, 400);
     const material1 = new THREE.MeshNormalMaterial();
     const material = [
-        new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load('smile.png')}),
+        new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load('./components/smile.png')}),
         new THREE.MeshBasicMaterial({color:'lightgreen'}),
         new THREE.MeshBasicMaterial({color:'lightsteelblue'}),
         new THREE.MeshBasicMaterial({color:'lightseagreen'}),
@@ -405,8 +414,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         requestAnimationFrame(tick);
     }
 </script>
-
-
 
 </body>
 </html>
