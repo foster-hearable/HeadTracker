@@ -1,14 +1,13 @@
 # Hearable HeadTracker
 ---
 ## Overview
-Hearable HeadTrackerはヒアラブルデバイス（フォスター電機 RN002）に実装されているヘッドトラッキング機能のフロントエンドアプリケーションです。
+Hearable HeadTrackerはヒアラブルデバイス（フォスター電機 RN002）に実装されているヘッドトラッキング機能のフロントエンドアプリケーションです。（デモ用Webサイト [https://foster-hearable.github.io/HeadTracker/](https://foster-hearable.github.io/HeadTracker/)）
 
 WebBluetoothを用いてヒアラブルデバイスRN002からデータ取得を行い、ブラウザに表示されているオブジェクトの回転やWebSocketでのデータ送出を行います。\
 オブジェクトの回転およびWebSocketのデータは、ヒアラブルデバイスのジャイロセンサー／加速度センサーの出力をMadgwickフィルタにより四元数（Quaternion）に変換しており、Thress.jsやUnityなどの3Dオブジェクト制御に使用することが可能です。
 
 ## 対応ブラウザ
-WebBluetoothに対応したブラウザ　参考：[ブラウザー互換性一覧表 Mozilla.org](https://developer.mozilla.org/ja/docs/Web/API/Web_Bluetooth_API#ブラウザーの互換性)
-
+WebBluetoothに対応したブラウザ（参考：[ブラウザー互換性一覧表 Mozilla.org](https://developer.mozilla.org/ja/docs/Web/API/Web_Bluetooth_API#ブラウザーの互換性)）
 #### 動作することを確認しているブラウザ
 - Chrome（Windows,Mac）
 - Edge（Windows,Mac）
