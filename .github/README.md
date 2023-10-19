@@ -48,10 +48,10 @@ WebSocketで送られてきたヒアラブルデバイスの回転データを�
 |   | データ種別 | フォーマット |
 |-|-|-|
 | 1 | ステータス | bit7-2:使用せず、bit1:タッチ操作(1:ON、0:OFF)、bit0:装着(1:ON、0:OFF) |
-| 2 | W軸 | Float値によるW軸データ（クウォータニオン） |
-| 3 | X軸 | Float値によるX軸データ（クウォータニオン） |
-| 4 | Y軸 | Float値によるY軸データ（クウォータニオン） |
-| 5 | Z軸 | Float値によるZ軸データ（クウォータニオン） |
+| 2 | W成分 | Float値によるQuaternionのW成分データ |
+| 3 | X成分 | Float値によるQuaternionのX成分データ |
+| 4 | Y成分 | Float値によるQuaternionのY成分データ |
+| 5 | Z成分 | Float値によるQuaternionのZ成分データ |
 
 
 ## 注意事項
