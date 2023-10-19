@@ -34,7 +34,7 @@ Released under the MIT license
     <div class="flex" >
         <button id="startNotifications" class="button">Start Notify</button>
         <button id="stopNotifications" class="button">Stop Notify</button>
-        <button id="Reposition" class="button">Reposition</button>
+        <button id="MultiFunctionButton" class="button">Invert</button>
     </div>
     <br/>
     <div class="flex" >
@@ -277,10 +277,15 @@ Released under the MIT license
         ble.stopNotify('GYRO');
         ble.stopNotify('COMP');
         ble.stopNotify('PROX');
+        document.getElementById('MultiFunctionButton').textContent = "Reload"
     }
 
-    robin_reposition = function () {
-        QuatReposition()
+    robin_mfb = function () {
+        if (document.getElementById('MultiFunctionButton').textContent == "Reload") {
+            location.reload()            
+        } else {
+            QuatReposition()
+        }
     }
 </script>
 
@@ -350,7 +355,7 @@ Released under the MIT license
     });
 
     document.getElementById('Reposition').addEventListener('click', function(e) {
-        robin_reposition();
+        robin_mfb();
     });
 
     document.getElementById('WebSocket').addEventListener('click', function(e) {
