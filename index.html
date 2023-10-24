@@ -186,11 +186,11 @@ Released under the MIT license
 
             if (!(gStatus & flgStatus.WEAR) && (wear==0x01)) {
                 var timer = window.setInterval( function() {
-                    document.getElementById("Reposition").disabled = true;
+                    document.getElementById("MultiFunctionButton").disabled = true;
                     QuatReposition()
                 }, 100);
                 window.setTimeout( function() {
-                    document.getElementById("Reposition").disabled = false;
+                    document.getElementById("MultiFunctionButton").disabled = false;
                     clearInterval(timer)
                     console.log("Home Posiotion Cleared.")
                 }, 3000)
